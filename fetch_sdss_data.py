@@ -19,18 +19,18 @@ DTYPES = (
     np.float, np.float, np.float, np.float, np.float, np.float, np.float,
     np.float, np.float, np.float, np.float, np.float, np.float, np.float,
     np.float, np.float, np.float, np.float, np.float, np.float, np.float,
-    np.float, np.float, np.float, np.float, np.float, np.float, np.float,
+    np.float, np.float, np.float, np.float, np.float, np.float,
     np.int
 )
 
-LABELS = ["GALAXY", "STAR", "QSO"]
+LABELS = ["GALAXY", "QSO", "STAR"]
 
 def execute_query(url, query, output_format):
     parameters = urllib.urlencode({'cmd': query, 'format': output_format})
     return urllib.urlopen(url + '?' + parameters)
 
 def download_subsample(url, obj_class, output_format='csv'):
-    query = ('SELECT TOP 4000 ' +
+    query = ('SELECT TOP 30000 ' +
             ','.join(NAMES) +
             ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
     result = execute_query(url, query.format(obj_class), output_format)
@@ -66,4 +66,4 @@ def fetch_data(refresh=False):
 
 
 if __name__ == '__main__':
-    data = fetch_data()
+    data = fetch_data(refresh=True)
