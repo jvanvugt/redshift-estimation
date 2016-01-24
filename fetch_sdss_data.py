@@ -1,3 +1,4 @@
+import sys
 import urllib
 import os
 from sklearn.externals import joblib
@@ -30,7 +31,7 @@ def execute_query(url, query, output_format):
     return urllib.urlopen(url + '?' + parameters)
 
 def download_subsample(url, obj_class, output_format='csv'):
-    query = ('SELECT TOP 30000 ' +
+    query = ('SELECT TOP 100000 ' +
             ','.join(NAMES) +
             ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
     result = execute_query(url, query.format(obj_class), output_format)
@@ -51,7 +52,8 @@ def fetch_data(refresh=False):
             return joblib.load(path)
     
     print 'Dataset not found. Downloading from server...'
-
+    sys.stdout.flush()
+    
     url = 'http://skyserver.sdss3.org/dr10/en/tools/search/x_sql.aspx'
     galaxies = download_subsample(url, 'GALAXY')
     stars = download_subsample(url, 'STAR')
