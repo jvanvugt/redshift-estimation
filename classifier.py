@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn import preprocessing
 
 from fetch_sdss_data import fetch_data
 
@@ -18,6 +19,8 @@ def get_data():
     X[:, 3] = data['dered_i'] - data['dered_z']
     y = data['class']
     X, y = remove_missing(X, y)
+    
+    X = preprocessing.scale(X)
     return X, y
     
 def train(features, labels):
@@ -43,7 +46,7 @@ def predict(features, labels, classifier):
 def learn():
     X, y = get_data()    
     N = len(X)
-    print 'N=', N
+    print 'N =', N
     shuffled_indices = np.arange(N)
     np.random.shuffle(shuffled_indices)
     X = X[shuffled_indices, :]
