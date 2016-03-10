@@ -4,7 +4,7 @@ import os
 from sklearn.externals import joblib
 import numpy as np
 
-DATA_FOLDER = 'data'
+DATA_FOLDER = '../data'
 
 NAMES = [
     'specObjID', 'targetObjID', 'z', 'zErr', 'psfMag_u', 'psfMagErr_u',
@@ -40,8 +40,8 @@ def download_subsample(url, obj_class, output_format='csv'):
         print result.readlines()
         raise IOError('{0} - Error Fetching SDSS data' % result.getcode())
 
-    data = np.genfromtxt(result, delimiter=',', names=NAMES, 
-                         dtype=DTYPES, skip_header=2, 
+    data = np.genfromtxt(result, delimiter=',', names=NAMES,
+                         dtype=DTYPES, skip_header=2,
                          converters={29: lambda s: LABELS.index(s)})
     return data
 
@@ -50,16 +50,16 @@ def fetch_data(refresh=False):
     path = os.path.join(DATA_FOLDER, file_name)
     if not refresh and os.path.isfile(path):
             return joblib.load(path)
-    
+
     print 'Dataset not found. Downloading from server...'
     sys.stdout.flush()
-    
+
     url = 'http://skyserver.sdss3.org/dr10/en/tools/search/x_sql.aspx'
     galaxies = download_subsample(url, 'GALAXY')
     stars = download_subsample(url, 'STAR')
     quasars = download_subsample(url, 'QSO')
     data = np.concatenate((galaxies, quasars, stars), axis=0)
-    
+
     if not os.path.exists(DATA_FOLDER):
         os.makedirs(DATA_FOLDER)
     joblib.dump(data, path)
