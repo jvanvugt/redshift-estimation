@@ -1,7 +1,13 @@
+"""
+@author: Joris van Vugt
+"""
+
 from sklearn.neighbors.regression import KNeighborsRegressor
 
 class RedshiftRegressor(object):
-
+    """
+    Regression using k-nearest neighbours.
+    """
     def __init__(self):
         self.regressor = KNeighborsRegressor(n_neighbors=8)
 

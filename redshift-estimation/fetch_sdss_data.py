@@ -1,3 +1,7 @@
+"""
+@author: Joris van Vugt
+"""
+
 import sys
 import urllib
 import os
@@ -27,10 +31,16 @@ DTYPES = (
 LABELS = ["GALAXY", "QSO", "STAR"]
 
 def execute_query(url, query, output_format):
+    """
+    Encode the query in the url and execute it.
+    """
     parameters = urllib.urlencode({'cmd': query, 'format': output_format})
     return urllib.urlopen(url + '?' + parameters)
 
 def download_subsample(url, obj_class, output_format='csv'):
+    """
+    Download data of class obj_class from url
+    """
     query = ('SELECT TOP 100000 ' +
             ','.join(NAMES) +
             ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
@@ -46,6 +56,12 @@ def download_subsample(url, obj_class, output_format='csv'):
     return data
 
 def fetch_data(refresh=False):
+    """
+    Fetch galaxy, quasar and star data from SDSS data release 10.
+    The data will be saved locally to ../data, so it only has to be downloaded
+    once.
+    if refresh is True, then the data will always be downloaded.
+    """
     file_name = 'SDSS_DR10.p'
     path = os.path.join(DATA_FOLDER, file_name)
     if not refresh and os.path.isfile(path):

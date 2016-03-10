@@ -1,14 +1,30 @@
+"""
+@author: Joris van Vugt
+"""
+
 from __future__ import division
 
 import numpy as np
 from matplotlib import pyplot as plt
-from astroML.plotting import scatter_contour
 
 from fetch_sdss_data import fetch_data
 from qso_classifier import QsoClassifier
 from redshift_regression import RedshiftRegressor
 
 def get_data():
+    """
+    Fetch data and extract features.
+    
+    X has four attributes: 
+        dered_u - dered_g
+        dered_g - dered_r
+        dered_r - dered_i
+        dered_i - dered_z
+    
+    y has two attributes:
+        class: 0 (galaxy), 1 (quasar),or 2 (star)
+        redshift
+    """
     data = fetch_data()
     N = len(data)
     X = np.zeros((N, 4))
@@ -24,21 +40,34 @@ def get_data():
     return X, y
 
 def remove_missing(features, labels):
+    """
+    Remove any rows from the data that have missing data.
+    """
     not_missing = ~np.isnan(features).any(axis=1)
     return features[not_missing, :], labels[not_missing, :]
 
 def shuffle(features, labels):
+    """
+    Shuffle the data.
+    """
     shuffled_indices = np.arange(len(features))
     np.random.shuffle(shuffled_indices)
     return features[shuffled_indices, :], labels[shuffled_indices, :]
 
 def add_correct(acc, x):
+    """
+    x is a tuple of the prediction and label of an instance.
+    if the label is equals to the prediction, increment acc[label] by 1.
+    """
     prediction, label = x
     if prediction == label:
         acc[label] += 1
     return acc
 
 def classification_info(predictions, labels):
+    """
+    Print some info about the performance of the classifier.
+    """
     print '\nClassifier:'
     counts = np.bincount(labels)
 
@@ -52,6 +81,9 @@ def classification_info(predictions, labels):
     print 'Total: %i of %i' % (sum(correct), len(labels))
 
 def regressor_info(predictions, actual):
+    """
+    Print info about the performate of the regression.
+    """
     print '\nRegression:'
     rms = np.sqrt(np.mean((actual - predictions) ** 2))
     print "RMS error = %.2g" % rms
@@ -76,11 +108,20 @@ def regressor_info(predictions, actual):
     plt.show()
 
 def find_quasar_indices(classes):
+    """
+    Find the indices of quasars.
+    
+    Returns a boolean array: 
+    [class == quasar for class in classes]
+    """
     idx = np.equal(classes, np.ones((1, len(classes))))
     idx.shape = classes.shape
     return idx
 
 def classify(X_train, X_test, y_train, y_test):
+    """
+    Train and test a k-neareast neighbours classifier
+    """
     clf = QsoClassifier()
     print 'Training classifier...'
     clf.fit(X_train, y_train)
@@ -90,6 +131,9 @@ def classify(X_train, X_test, y_train, y_test):
     print
 
 def regress(X_train, X_test, y_train, y_test):
+    """
+    Train and test a k-neareast neighbours regressor 
+    """
     regressor = RedshiftRegressor()
     print 'Training regressor...'
     regressor.fit(X_train, y_train)
@@ -98,6 +142,10 @@ def regress(X_train, X_test, y_train, y_test):
     regressor_info(predictions_regressor, y_test)
 
 def run():
+    """
+    Train a classifier to find quasars and a regressor for estimating their
+    redshifts
+    """
     print 'Getting Data...'
     X, y = get_data()
     N = len(X)
