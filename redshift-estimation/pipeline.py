@@ -6,6 +6,7 @@ from __future__ import division
 
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.stats import gaussian_kde
 
 from fetch_sdss_data import fetch_data
 from qso_classifier import QsoClassifier
@@ -89,9 +90,11 @@ def regressor_info(predictions, actual):
     print "RMS error = %.2g" % rms
 
     axis_lim = np.array([-0.1, 7.0])
+    xy = np.vstack([predictions, actual])
+    z = gaussian_kde(xy)(xy)
 
     ax = plt.axes()
-    plt.scatter(actual, predictions, c='k', lw=0, s=4)
+    plt.scatter(actual, predictions, c=z, lw=0, s=4)
     plt.plot(axis_lim, axis_lim, '--k')
     plt.plot(axis_lim, axis_lim + rms, ':k')
     plt.plot(axis_lim, axis_lim - rms, ':k')
@@ -178,15 +181,14 @@ def run():
     quasar_indices_train = find_quasar_indices(y_train[:, 0])
     quasar_indices_test = find_quasar_indices(y_test[:, 0])
 
-    indices_redshift_train = find_redshift_indices(y_train[:, 1], 4)
-    indices_redshift_test = find_redshift_indices(y_test[:, 1], 4)
+    indices_redshift_train = find_redshift_indices(y_train[:, 1], -1)
+    indices_redshift_test = find_redshift_indices(y_test[:, 1], -1)
 
     idx_train = np.logical_and(quasar_indices_train, indices_redshift_train)
     idx_test = np.logical_and(quasar_indices_test, indices_redshift_test)
 
     # Extract the quasars from the training and test set
     X_qso_train = X_train[idx_train]
-    print len(X_qso_train)
     X_qso_test = X_test[idx_test]
     redshift_qso_train = y_train[idx_train, 1]
     redshift_qso_test = y_test[idx_test, 1]
