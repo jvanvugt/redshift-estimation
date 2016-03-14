@@ -107,17 +107,26 @@ def regressor_info(predictions, actual):
     plt.ylabel(r'$\mathrm{z_{phot}}$', fontsize=14)
     plt.show()
 
-def find_quasar_indices(y, z=-1):
+def find_redshift_indices(redshifts, value, unequality=np.greater_equal):
+    """
+    Return a list with True and False indicating where the redshift satifies
+    the unequality.
+
+    unequality is a numpy function like np.greater, np.less, etc.
+    """
+    idx = unequality(redshifts, np.full((1, len(redshifts)), value))
+    idx.shape = redshifts.shape
+    return idx
+
+def find_quasar_indices(classes):
     """
     Find the indices of quasars.
 
-    Returns a boolean array:
-    [class == quasar for class, redshift in y if redshift >= z]
+    Return a boolean array:
+    [class == quasar for class in classes]
     """
-    idx_qso = np.equal(y[:, 0], np.ones((1, len(y))))
-    idx_redshift = np.greater_equal(y[:, 1], np.full((1, len(y)), z))
-    idx = np.logical_and(idx_qso, idx_redshift)
-    idx.shape = (len(y), )
+    idx = np.equal(classes, np.ones((1, len(classes))))
+    idx.shape = classes.shape
     return idx
 
 def classify(X_train, X_test, y_train, y_test):
@@ -166,15 +175,21 @@ def run():
     classify(X_train, X_test, class_train, class_test)
 
     # Find the quasars in the data
-    quasar_indices_train = find_quasar_indices(y_train)
-    quasar_indices_test = find_quasar_indices(y_test)
+    quasar_indices_train = find_quasar_indices(y_train[:, 0])
+    quasar_indices_test = find_quasar_indices(y_test[:, 0])
+
+    indices_redshift_train = find_redshift_indices(y_train[:, 1], 4)
+    indices_redshift_test = find_redshift_indices(y_test[:, 1], 4)
+
+    idx_train = np.logical_and(quasar_indices_train, indices_redshift_train)
+    idx_test = np.logical_and(quasar_indices_test, indices_redshift_test)
 
     # Extract the quasars from the training and test set
-    X_qso_train = X_train[quasar_indices_train]
+    X_qso_train = X_train[idx_train]
     print len(X_qso_train)
-    X_qso_test = X_test[quasar_indices_test]
-    redshift_qso_train = y_train[quasar_indices_train, 1]
-    redshift_qso_test = y_test[quasar_indices_test, 1]
+    X_qso_test = X_test[idx_test]
+    redshift_qso_train = y_train[idx_train, 1]
+    redshift_qso_test = y_test[idx_test, 1]
 
     # Estimate redshift for quasars
     regress(X_qso_train, X_qso_test, redshift_qso_train, redshift_qso_test)
