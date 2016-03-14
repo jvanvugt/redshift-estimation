@@ -14,13 +14,13 @@ from redshift_regression import RedshiftRegressor
 def get_data():
     """
     Fetch data and extract features.
-    
-    X has four attributes: 
+
+    X has four attributes:
         dered_u - dered_g
         dered_g - dered_r
         dered_r - dered_i
         dered_i - dered_z
-    
+
     y has two attributes:
         class: 0 (galaxy), 1 (quasar),or 2 (star)
         redshift
@@ -107,15 +107,17 @@ def regressor_info(predictions, actual):
     plt.ylabel(r'$\mathrm{z_{phot}}$', fontsize=14)
     plt.show()
 
-def find_quasar_indices(classes):
+def find_quasar_indices(y, z=-1):
     """
     Find the indices of quasars.
-    
-    Returns a boolean array: 
-    [class == quasar for class in classes]
+
+    Returns a boolean array:
+    [class == quasar for class, redshift in y if redshift >= z]
     """
-    idx = np.equal(classes, np.ones((1, len(classes))))
-    idx.shape = classes.shape
+    idx_qso = np.equal(y[:, 0], np.ones((1, len(y))))
+    idx_redshift = np.greater_equal(y[:, 1], np.full((1, len(y)), z))
+    idx = np.logical_and(idx_qso, idx_redshift)
+    idx.shape = (len(y), )
     return idx
 
 def classify(X_train, X_test, y_train, y_test):
@@ -132,7 +134,7 @@ def classify(X_train, X_test, y_train, y_test):
 
 def regress(X_train, X_test, y_train, y_test):
     """
-    Train and test a k-neareast neighbours regressor 
+    Train and test a k-neareast neighbours regressor
     """
     regressor = RedshiftRegressor()
     print 'Training regressor...'
@@ -164,11 +166,12 @@ def run():
     classify(X_train, X_test, class_train, class_test)
 
     # Find the quasars in the data
-    quasar_indices_train = find_quasar_indices(class_train)
-    quasar_indices_test = find_quasar_indices(class_test)
+    quasar_indices_train = find_quasar_indices(y_train)
+    quasar_indices_test = find_quasar_indices(y_test)
 
     # Extract the quasars from the training and test set
     X_qso_train = X_train[quasar_indices_train]
+    print len(X_qso_train)
     X_qso_test = X_test[quasar_indices_test]
     redshift_qso_train = y_train[quasar_indices_train, 1]
     redshift_qso_test = y_test[quasar_indices_test, 1]
