@@ -3,10 +3,13 @@
 """
 
 from __future__ import division
+from math import sqrt
 
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
+from sklearn.metrics import mean_squared_error, confusion_matrix, \
+    accuracy_score
 
 from fetch_sdss_data import fetch_data
 from qso_classifier import QsoClassifier
@@ -55,38 +58,35 @@ def shuffle(features, labels):
     np.random.shuffle(shuffled_indices)
     return features[shuffled_indices, :], labels[shuffled_indices, :]
 
-def add_correct(acc, x):
-    """
-    x is a tuple of the prediction and label of an instance.
-    if the label is equals to the prediction, increment acc[label] by 1.
-    """
-    prediction, label = x
-    if prediction == label:
-        acc[label] += 1
-    return acc
-
 def classification_info(predictions, labels):
     """
     Print some info about the performance of the classifier.
     """
     print '\nClassifier:'
-    counts = np.bincount(labels)
 
-    correct = reduce(add_correct, zip(predictions, labels), [0, 0, 0])
+    cm = confusion_matrix(labels, predictions)
+    normalized_cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-    print 'accuracy:', sum(correct) / len(labels)
+    names = ['Star', 'Quasar', 'Galaxy']
+    plt.imshow(normalized_cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Classification: normalized confusion matrix')
+    plt.colorbar()
+    tick_marks = np.arange(len(names))
+    plt.xticks(tick_marks, names, rotation=45)
+    plt.yticks(tick_marks, names)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
 
-    print 'Galaxies: %i of %i' % (correct[0], counts[0])
-    print 'Quasars: %i of %i' % (correct[1], counts[1])
-    print 'Stars: %i of %i' % (correct[2], counts[2])
-    print 'Total: %i of %i' % (sum(correct), len(labels))
+    print 'accuracy:', accuracy_score(labels, predictions)
 
 def regressor_info(predictions, actual):
     """
     Print info about the performate of the regression.
     """
     print '\nRegression:'
-    rms = np.sqrt(np.mean((actual - predictions) ** 2))
+    rms = sqrt(mean_squared_error(actual, predictions))
     print "RMS error = %.2g" % rms
 
     axis_lim = np.array([-0.1, 7.0])
@@ -137,6 +137,8 @@ def find_quasar_indices(classes):
 def classify(X_train, X_test, y_train, y_test):
     """
     Train and test a k-neareast neighbours classifier
+
+    Return the predictions for the test set
     """
     clf = QsoClassifier()
     print 'Training classifier...'
@@ -145,6 +147,7 @@ def classify(X_train, X_test, y_train, y_test):
     predictions_clf = clf.predict(X_test)
     classification_info(predictions_clf, y_test)
     print
+    return predictions_clf
 
 def regress(X_train, X_test, y_train, y_test):
     """
