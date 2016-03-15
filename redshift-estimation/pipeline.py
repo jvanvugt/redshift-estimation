@@ -65,11 +65,11 @@ def classification_info(predictions, labels):
     print '\nClassifier:'
 
     cm = confusion_matrix(labels, predictions)
-    normalized_cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    normalized_cm = np.log10(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis])
 
     names = ['Star', 'Quasar', 'Galaxy']
     plt.imshow(normalized_cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('Classification: normalized confusion matrix')
+    plt.title('Classification: normalized confusion matrix (logscale)')
     plt.colorbar()
     tick_marks = np.arange(len(names))
     plt.xticks(tick_marks, names, rotation=45)
