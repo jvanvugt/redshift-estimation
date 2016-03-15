@@ -90,6 +90,8 @@ def regressor_info(predictions, actual):
     print "RMS error = %.2g" % rms
 
     axis_lim = np.array([-0.1, 7.0])
+
+    # Compute the colors
     xy = np.vstack([predictions, actual])
     z = gaussian_kde(xy)(xy)
 
