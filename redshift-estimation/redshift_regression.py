@@ -8,8 +8,8 @@ class RedshiftRegressor(object):
     """
     Regression using k-nearest neighbours.
     """
-    def __init__(self):
-        self.regressor = KNeighborsRegressor(n_neighbors=8)
+    def __init__(self, n=8):
+        self.regressor = KNeighborsRegressor(n_neighbors=n)
 
     def fit(self, X, y):
         self.regressor.fit(X, y)

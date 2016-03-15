@@ -8,8 +8,8 @@ class QsoClassifier(object):
     """
     Classifier using k-nearest neighbours.
     """
-    def __init__(self):
-        self.classifier = KNeighborsClassifier(n_neighbors=8)
+    def __init__(self, n=8):
+        self.classifier = KNeighborsClassifier(n_neighbors=n)
 
     def fit(self, X, y):
         self.classifier.fit(X, y)
