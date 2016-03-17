@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error, confusion_matrix, \
     accuracy_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from fetch_sdss_data import fetch_data
 from qso_classifier import QsoClassifier
@@ -31,11 +32,22 @@ def get_data():
     """
     data = fetch_data()
     N = len(data)
-    X = np.zeros((N, 4))
-    X[:, 0] = data['dered_u'] - data['dered_g']
-    X[:, 1] = data['dered_g'] - data['dered_r']
-    X[:, 2] = data['dered_r'] - data['dered_i']
-    X[:, 3] = data['dered_i'] - data['dered_z']
+    X = np.zeros((N, 15))
+    X[:, 0] = data['dered_u']
+    X[:, 1] = data['dered_g']
+    X[:, 2] = data['dered_r']
+    X[:, 3] = data['dered_i']
+    X[:, 4] = data['dered_z']
+    X[:, 5] = data['psfMag_u']
+    X[:, 6] = data['psfMag_g']
+    X[:, 7] = data['psfMag_r']
+    X[:, 8] = data['psfMag_i']
+    X[:, 9] = data['psfMag_z']
+    X[:, 10] = data['modelMag_u']
+    X[:, 11] = data['modelMag_g']
+    X[:, 12] = data['modelMag_r']
+    X[:, 13] = data['modelMag_i']
+    X[:, 14] = data['modelMag_z']
 
     y = np.zeros((len(data), 2))
     y[:, 0] = data['class']
@@ -91,17 +103,14 @@ def regressor_info(predictions, actual):
 
     axis_lim = np.array([-0.1, 7.0])
 
-    # Compute the colors
-    xy = np.vstack([predictions, actual])
-    z = gaussian_kde(xy)(xy)
-
     ax = plt.axes()
-    plt.scatter(actual, predictions, c=z, lw=0, s=4)
+    plt.hexbin(actual, predictions, mincnt=1, gridsize=300)
     plt.plot(axis_lim, axis_lim, '--k')
     plt.plot(axis_lim, axis_lim + rms, ':k')
     plt.plot(axis_lim, axis_lim - rms, ':k')
     plt.xlim(axis_lim)
     plt.ylim(axis_lim)
+    plt.colorbar()
 
     plt.text(0.99, 0.02, "RMS error = %.2g" % rms,
         ha='right', va='bottom', transform=ax.transAxes,
@@ -140,7 +149,7 @@ def classify(X_train, X_test, y_train, y_test):
 
     Return the predictions for the test set
     """
-    clf = QsoClassifier()
+    clf = RandomForestClassifier()
     print 'Training classifier...'
     clf.fit(X_train, y_train)
     print 'Testing classifier...'
@@ -153,7 +162,7 @@ def regress(X_train, X_test, y_train, y_test):
     """
     Train and test a k-neareast neighbours regressor
     """
-    regressor = RedshiftRegressor()
+    regressor = RandomForestRegressor()
     print 'Training regressor...'
     regressor.fit(X_train, y_train)
     print 'Testing regressor...'
@@ -168,6 +177,7 @@ def run():
     print 'Getting Data...'
     X, y = get_data()
     N = len(X)
+    print "N:", N
 
     N_train = N / 2
     X, y = shuffle(X, y)
@@ -197,6 +207,8 @@ def run():
     X_qso_test = X_test[idx_test]
     redshift_qso_train = y_train[idx_train, 1]
     redshift_qso_test = y_test[idx_test, 1]
+
+    print "n_quasars:", len(X_qso_train) + len(X_qso_test)
 
     # Estimate redshift for quasars
     regress(X_qso_train, X_qso_test, redshift_qso_train, redshift_qso_test)
