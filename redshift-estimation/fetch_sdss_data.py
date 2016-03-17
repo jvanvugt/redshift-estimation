@@ -41,7 +41,7 @@ def download_subsample(url, obj_class, output_format='csv'):
     """
     Download data of class obj_class from url
     """
-    query = ('SELECT TOP 100000 ' +
+    query = ('SELECT ' +
             ','.join(NAMES) +
             ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
     result = execute_query(url, query.format(obj_class), output_format)
@@ -50,8 +50,14 @@ def download_subsample(url, obj_class, output_format='csv'):
         print result.readlines()
         raise IOError('{0} - Error Fetching SDSS data' % result.getcode())
 
+    # For some reason skyserver will just stop sending data at some point
+    # That point might be in the middle of an instance, so it will have
+    # less than 30 columns causing np.genfromtxt to throw an error.
+    # For this reason, we use skip_footer to just disregard the last instance
+    # and avoid this problem all together.
     data = np.genfromtxt(result, delimiter=',', names=NAMES,
                          dtype=DTYPES, skip_header=2,
+                         skip_footer=1,
                          converters={29: lambda s: LABELS.index(s)})
     return data
 
