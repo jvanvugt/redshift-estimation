@@ -7,7 +7,6 @@ from math import sqrt
 
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error, confusion_matrix, \
     accuracy_score
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
