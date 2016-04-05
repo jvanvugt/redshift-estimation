@@ -3,7 +3,7 @@
 """
 
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
 from sklearn.externals import joblib
 import numpy as np
@@ -34,8 +34,8 @@ def execute_query(url, query, output_format):
     """
     Encode the query in the url and execute it.
     """
-    parameters = urllib.urlencode({'cmd': query, 'format': output_format})
-    return urllib.urlopen(url + '?' + parameters)
+    parameters = urllib.parse.urlencode({'cmd': query, 'format': output_format})
+    return urllib.request.urlopen(url + '?' + parameters)
 
 def download_subsample(url, obj_class, output_format='csv'):
     """
@@ -43,11 +43,11 @@ def download_subsample(url, obj_class, output_format='csv'):
     """
     query = ('SELECT ' +
             ','.join(NAMES) +
-            ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
+            ' FROM SpecPhotoAll WHERE class="{0}" AND survey="SDSS" ORDER BY NEWID()')
     result = execute_query(url, query.format(obj_class), output_format)
 
     if result.getcode() != 200:
-        print result.readlines()
+        print(result.readlines())
         raise IOError('{0} - Error Fetching SDSS data' % result.getcode())
 
     # For some reason skyserver will just stop sending data at some point
@@ -68,15 +68,15 @@ def fetch_data(refresh=False):
     once.
     if refresh is True, then the data will always be downloaded.
     """
-    file_name = 'SDSS_DR10.p'
+    file_name = 'SDSS_DR12.p'
     path = os.path.join(DATA_FOLDER, file_name)
     if not refresh and os.path.isfile(path):
             return joblib.load(path)
 
-    print 'Dataset not found. Downloading from server...'
+    print('Dataset not found. Downloading from server...')
     sys.stdout.flush()
 
-    url = 'http://skyserver.sdss3.org/dr10/en/tools/search/x_sql.aspx'
+    url = 'http://skyserver.sdss3.org/dr12/en/tools/search/x_sql.aspx'
     galaxies = download_subsample(url, 'GALAXY')
     stars = download_subsample(url, 'STAR')
     quasars = download_subsample(url, 'QSO')

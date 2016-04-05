@@ -1,8 +1,6 @@
 """
 @author: Joris van Vugt
 """
-
-from __future__ import division
 from math import sqrt
 
 import numpy as np
@@ -73,7 +71,7 @@ def classification_info(predictions, labels):
     """
     Print some info about the performance of the classifier.
     """
-    print '\nClassifier:'
+    print('\nClassifier:')
 
     cm = confusion_matrix(labels, predictions)
     normalized_cm = np.log10(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis])
@@ -90,15 +88,15 @@ def classification_info(predictions, labels):
     plt.xlabel('Predicted label')
     plt.show()
 
-    print 'accuracy:', accuracy_score(labels, predictions)
+    print('accuracy:', accuracy_score(labels, predictions))
 
 def regressor_info(predictions, actual):
     """
     Print info about the performate of the regression.
     """
-    print '\nRegression:'
+    print('\nRegression:')
     rms = sqrt(mean_squared_error(actual, predictions))
-    print "RMS error = %.2g" % rms
+    print("RMS error = %.2g" % rms)
 
     axis_lim = np.array([-0.1, 7.0])
 
@@ -127,7 +125,7 @@ def find_redshift_indices(redshifts, value, unequality=np.greater_equal):
 
     unequality is a numpy function like np.greater, np.less, etc.
     """
-    idx = unequality(redshifts, np.full((1, len(redshifts)), value))
+    idx = unequality(redshifts, np.full((1, len(redshifts)), value, np.int))
     idx.shape = redshifts.shape
     return idx
 
@@ -149,12 +147,12 @@ def classify(X_train, X_test, y_train, y_test):
     Return the predictions for the test set
     """
     clf = RandomForestClassifier()
-    print 'Training classifier...'
+    print('Training classifier...')
     clf.fit(X_train, y_train)
-    print 'Testing classifier...'
+    print('Testing classifier...')
     predictions_clf = clf.predict(X_test)
     classification_info(predictions_clf, y_test)
-    print
+    print()
     return predictions_clf
 
 def regress(X_train, X_test, y_train, y_test):
@@ -162,9 +160,9 @@ def regress(X_train, X_test, y_train, y_test):
     Train and test a k-neareast neighbours regressor
     """
     regressor = RandomForestRegressor()
-    print 'Training regressor...'
+    print('Training regressor...')
     regressor.fit(X_train, y_train)
-    print 'Testing regressor...'
+    print('Testing regressor...')
     predictions_regressor = regressor.predict(X_test)
     regressor_info(predictions_regressor, y_test)
 
@@ -173,10 +171,10 @@ def run():
     Train a classifier to find quasars and a regressor for estimating their
     redshifts
     """
-    print 'Getting Data...'
+    print('Getting Data...')
     X, y = get_data()
     N = len(X)
-    print "N:", N
+    print("N:", N)
 
     N_train = N / 2
     X, y = shuffle(X, y)
@@ -207,7 +205,7 @@ def run():
     redshift_qso_train = y_train[idx_train, 1]
     redshift_qso_test = y_test[idx_test, 1]
 
-    print "n_quasars:", len(X_qso_train) + len(X_qso_test)
+    print("n_quasars:", len(X_qso_train) + len(X_qso_test))
 
     # Estimate redshift for quasars
     regress(X_qso_train, X_qso_test, redshift_qso_train, redshift_qso_test)
