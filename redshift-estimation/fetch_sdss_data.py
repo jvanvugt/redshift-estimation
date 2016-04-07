@@ -43,7 +43,7 @@ def download_subsample(url, obj_class, output_format='csv'):
     """
     query = ('SELECT ' +
             ','.join(NAMES) +
-            ' FROM SpecPhotoAll WHERE class="{0}" ORDER BY NEWID()')
+            ' FROM SpecPhotoAll WHERE class="{0}" AND survey="SDSS" ORDER BY NEWID()')
     result = execute_query(url, query.format(obj_class), output_format)
 
     if result.getcode() != 200:
