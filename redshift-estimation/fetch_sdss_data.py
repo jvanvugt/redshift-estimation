@@ -3,7 +3,7 @@
 """
 
 import sys
-import urllib.request, urllib.parse, urllib.error
+import urllib
 import os
 from sklearn.externals import joblib
 import numpy as np
@@ -11,20 +11,46 @@ import numpy as np
 DATA_FOLDER = '../data'
 
 NAMES = [
-    'specObjID', 'targetObjID', 'z', 'zErr', 'psfMag_u', 'psfMagErr_u',
-    'psfMag_g', 'psfMagErr_g', 'psfMag_r', 'psfMagErr_r', 'psfMag_i',
-    'psfMagErr_i', 'psfMag_z', 'psfMagErr_z', 'modelMag_u', 'modelMagErr_u',
-    'modelMag_g', 'modelMagErr_g', 'modelMag_r', 'modelMagErr_r', 'modelMag_i',
-    'modelMagErr_i', 'modelMag_z', 'modelMagErr_z', 'dered_u', 'dered_g',
-    'dered_r', 'dered_i', 'dered_z', 'class'
+    'specObjID', 'targetObjID', 'z', 'zErr',
+
+    'psfMag_u', 'psfMag_g', 'psfMag_r', 'psfMag_i', 'psfMag_z',
+    'psfMagErr_u', 'psfMagErr_g', 'psfMagErr_r', 'psfMagErr_i', 'psfMagErr_z',
+
+    'fiberMag_u', 'fiberMag_g', 'fiberMag_r', 'fiberMag_i', 'fiberMag_z',
+    'fiberMagErr_u', 'fiberMagErr_g', 'fiberMagErr_r', 'fiberMagErr_i', 'fiberMagErr_z',
+
+    'modelMag_u', 'modelMag_g', 'modelMag_r', 'modelMag_i', 'modelMag_z',
+    'modelMagErr_u', 'modelMagErr_g', 'modelMagErr_r', 'modelMagErr_i', 'modelMagErr_z',
+
+    'petroMag_u', 'petroMag_g', 'petroMag_r', 'petroMag_i', 'petroMag_z',
+    'petroMagErr_u', 'petroMagErr_g', 'petroMagErr_r', 'petroMagErr_i', 'petroMagErr_z',
+
+    'extinction_u', 'extinction_g', 'extinction_r', 'extinction_i', 'extinction_z',
+
+    'dered_u', 'dered_g', 'dered_r', 'dered_i', 'dered_z',
+
+    'class'
 ]
 
 DTYPES = (
-    np.int64, np.int64,
-    np.float, np.float, np.float, np.float, np.float, np.float, np.float,
-    np.float, np.float, np.float, np.float, np.float, np.float, np.float,
-    np.float, np.float, np.float, np.float, np.float, np.float, np.float,
-    np.float, np.float, np.float, np.float, np.float, np.float,
+    np.int64, np.int64, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+    np.float, np.float, np.float, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+    np.float, np.float, np.float, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+    np.float, np.float, np.float, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+    np.float, np.float, np.float, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+
+    np.float, np.float, np.float, np.float, np.float,
+
     np.int
 )
 
@@ -34,8 +60,8 @@ def execute_query(url, query, output_format):
     """
     Encode the query in the url and execute it.
     """
-    parameters = urllib.parse.urlencode({'cmd': query, 'format': output_format})
-    return urllib.request.urlopen(url + '?' + parameters)
+    parameters = urllib.urlencode({'cmd': query, 'format': output_format})
+    return urllib.urlopen(url + '?' + parameters)
 
 def download_subsample(url, obj_class, output_format='csv'):
     """
@@ -47,7 +73,7 @@ def download_subsample(url, obj_class, output_format='csv'):
     result = execute_query(url, query.format(obj_class), output_format)
 
     if result.getcode() != 200:
-        print(result.readlines())
+        print result.readlines()
         raise IOError('{0} - Error Fetching SDSS data' % result.getcode())
 
     # For some reason skyserver will just stop sending data at some point
@@ -58,22 +84,21 @@ def download_subsample(url, obj_class, output_format='csv'):
     data = np.genfromtxt(result, delimiter=',', names=NAMES,
                          dtype=DTYPES, skip_header=2,
                          skip_footer=1,
-                         converters={29: lambda s: LABELS.index(s)})
+                         converters={54: lambda s: LABELS.index(s)})
     return data
 
-def fetch_data(refresh=False):
+def fetch_data(file_name='SDSS_DR12.p', refresh=False):
     """
-    Fetch galaxy, quasar and star data from SDSS data release 10.
+    Fetch galaxy, quasar and star data from SDSS data release 12.
     The data will be saved locally to ../data, so it only has to be downloaded
     once.
     if refresh is True, then the data will always be downloaded.
     """
-    file_name = 'SDSS_DR12.p'
     path = os.path.join(DATA_FOLDER, file_name)
     if not refresh and os.path.isfile(path):
             return joblib.load(path)
 
-    print('Dataset not found. Downloading from server...')
+    print 'Dataset not found. Downloading from server...'
     sys.stdout.flush()
 
     url = 'http://skyserver.sdss3.org/dr12/en/tools/search/x_sql.aspx'
@@ -86,6 +111,23 @@ def fetch_data(refresh=False):
         os.makedirs(DATA_FOLDER)
     joblib.dump(data, path)
     return data
+
+def pickle_csv_data(filepath, outpath):
+    with open(filepath, 'r') as file:
+        data = np.genfromtxt(file, delimiter=',', names=NAMES,
+                         dtype=DTYPES, skip_header=1,
+                         skip_footer=1,
+                         converters={54: lambda s: LABELS.index(s)})
+        joblib.dump(data, outpath)
+        return data
+
+def get_data_from_csv(file_name, refresh=False):
+    csv_path = os.path.join(DATA_FOLDER, file_name)
+    pickled_path = csv_path + '.p'
+    if not refresh and os.path.isfile(pickled_path):
+        return joblib.load(pickled_path)
+
+    return pickle_csv_data(csv_path, pickled_path)
 
 
 

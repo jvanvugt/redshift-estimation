@@ -2,14 +2,14 @@
 @author: Joris van Vugt
 """
 
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 class QsoClassifier(object):
     """
-    Classifier using k-nearest neighbours.
+    Classifier using random forests.
     """
-    def __init__(self, n=8):
-        self.classifier = KNeighborsClassifier(n_neighbors=n)
+    def __init__(self):
+        self.classifier = RandomForestClassifier(n_estimators=100, n_jobs=-1)
 
     def fit(self, X, y):
         self.classifier.fit(X, y)

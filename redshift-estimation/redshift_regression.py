@@ -2,14 +2,14 @@
 @author: Joris van Vugt
 """
 
-from sklearn.neighbors.regression import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 class RedshiftRegressor(object):
     """
-    Regression using k-nearest neighbours.
+    Regression using random forests.
     """
     def __init__(self, n=8):
-        self.regressor = KNeighborsRegressor(n_neighbors=n)
+        self.regressor = RandomForestRegressor(n_estimators=100, n_jobs=-1)
 
     def fit(self, X, y):
         self.regressor.fit(X, y)
