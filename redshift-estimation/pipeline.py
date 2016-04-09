@@ -230,7 +230,6 @@ def run(save_plots=True):
     regress(X_qso_train, X_qso_test, redshift_qso_train, redshift_qso_test, save_plots)
 
 
-
 if __name__ == '__main__':
     if '--save-plots' in sys.argv:
         run(save_plots=False)
