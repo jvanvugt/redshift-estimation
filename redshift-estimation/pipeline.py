@@ -21,11 +21,8 @@ def get_data():
     """
     Fetch data and extract features.
 
-    X has four attributes:
-        dered_u - dered_g
-        dered_g - dered_r
-        dered_r - dered_i
-        dered_i - dered_z
+    X has 30 attributes:
+        {dered, psfMag, modelMag, petroMag, fiberMag, extinction}_{u,g,r,i,z}
 
     y has two attributes:
         class: 0 (galaxy), 1 (quasar),or 2 (star)
@@ -78,7 +75,7 @@ def get_data():
 
 def remove_missing(features, labels):
     """
-    Remove any rows from the data that have missing data.
+    Remove all rows from the data that have missing data.
     """
     not_missing = ~np.isnan(features).any(axis=1)
     return features[not_missing, :], labels[not_missing, :]
@@ -113,7 +110,7 @@ def classification_info(predictions, labels, save_plots):
 
 def regressor_info(predictions, actual, save_plots):
     """
-    Print info about the performate of the regression.
+    Print info about the performance of the regression model.
     """
     print '\nRegression:'
     rms = sqrt(mean_squared_error(actual, predictions))
@@ -144,7 +141,7 @@ def regressor_info(predictions, actual, save_plots):
 
 def find_redshift_indices(redshifts, value, unequality=np.greater_equal):
     """
-    Return a list with True and False indicating where the redshift satifies
+    Return a list with True and False indicating where the redshift satisfies
     the unequality.
 
     unequality is a numpy function like np.greater, np.less, etc.
@@ -166,7 +163,7 @@ def find_quasar_indices(classes):
 
 def classify(X_train, X_test, y_train, y_test, save_plots):
     """
-    Train and test a k-neareast neighbours classifier
+    Train and test a random forest classifier
 
     Return the predictions for the test set
     """
@@ -181,7 +178,7 @@ def classify(X_train, X_test, y_train, y_test, save_plots):
 
 def regress(X_train, X_test, y_train, y_test, save_plots):
     """
-    Train and test a k-neareast neighbours regressor
+    Train and test a random forest regressor
     """
     regressor = RedshiftRegressor()
     print 'Training regressor...'
