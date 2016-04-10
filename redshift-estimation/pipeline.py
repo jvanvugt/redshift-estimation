@@ -4,7 +4,7 @@
 
 from __future__ import division
 import sys
-from math import sqrt
+from math import sqrt, floor, ceil
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -85,7 +85,7 @@ def classification_info(predictions, labels, save_plots):
     Print some info about the performance of the classifier.
     """
     print '\nClassifier:'
-    
+
     plt.figure()
     cm = confusion_matrix(labels, predictions)
     normalized_cm = np.log10(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis])
@@ -115,8 +115,12 @@ def regressor_info(predictions, actual, save_plots):
     print '\nRegression:'
     rms = sqrt(mean_squared_error(actual, predictions))
     print "RMS error = %.2g" % rms
-    axis_lim = np.array([-0.1, 7.0])
-    
+
+    minimum = floor(min(min(predictions), min(actual))) - 0.1
+    maximum = ceil(max(max(predictions), max(actual)))
+
+    axis_lim = np.array([minimum, maximum])
+
     plt.figure()
     ax = plt.axes()
     plt.hexbin(actual, predictions, mincnt=1, gridsize=300)
@@ -179,6 +183,7 @@ def classify(X_train, X_test, y_train, y_test, save_plots):
 def regress(X_train, X_test, y_train, y_test, save_plots):
     """
     Train and test a random forest regressor
+    Return the predictions for the test set
     """
     regressor = RedshiftRegressor()
     print 'Training regressor...'
@@ -186,6 +191,34 @@ def regress(X_train, X_test, y_train, y_test, save_plots):
     print 'Testing regressor...'
     predictions_regressor = regressor.predict(X_test)
     regressor_info(predictions_regressor, y_test, save_plots)
+    return predictions_regressor
+
+def bin_by_redshift(regions, redshifts):
+    """
+    regions should be a list in ascending order.
+    Return a list of len(redshifts) with a bin number for each instance
+    The first bin will contain all instances where z < regions[0]
+    The last bin will contain all instances where z > regions[-1]
+    """
+    regs = regions + [float('inf')]
+    idx = np.zeros((len(redshifts)))
+    for i, z in enumerate(redshifts):
+        idx[i] = next(regs.index(r) for r in regs if r > z)
+    return idx
+
+def regress_per_region(regions, X_train, X_test, y_train, y_test, save_plots):
+    bin_idx_train = bin_by_redshift(regions, y_train)
+    bin_idx_test = bin_by_redshift(regions, y_test)
+
+    for i in xrange(len(regions) + 1):
+        X_train_region = X_train[bin_idx_train == i]
+        X_test_region = X_test[bin_idx_test == i]
+        y_train_region = y_train[bin_idx_train == i]
+        y_test_region = y_test[bin_idx_test == i]
+        regress(X_train_region, X_test_region, y_train_region, y_test_region,
+                                                                    save_plots)
+
+
 
 def run(save_plots=True):
     """
@@ -203,28 +236,23 @@ def run(save_plots=True):
     class_test = y_test[:, 0].astype(np.int)
 
     # Predict the class of all objects
-    classify(X_train, X_test, class_train, class_test, save_plots)
+    # classify(X_train, X_test, class_train, class_test, save_plots)
 
     # Find the quasars in the data
     quasar_indices_train = find_quasar_indices(y_train[:, 0])
     quasar_indices_test = find_quasar_indices(y_test[:, 0])
 
-    indices_redshift_train = find_redshift_indices(y_train[:, 1], -1)
-    indices_redshift_test = find_redshift_indices(y_test[:, 1], -1)
-
-    idx_train = np.logical_and(quasar_indices_train, indices_redshift_train)
-    idx_test = np.logical_and(quasar_indices_test, indices_redshift_test)
-
     # Extract the quasars from the training and test set
-    X_qso_train = X_train[idx_train]
-    X_qso_test = X_test[idx_test]
-    redshift_qso_train = y_train[idx_train, 1]
-    redshift_qso_test = y_test[idx_test, 1]
+    X_qso_train = X_train[quasar_indices_train]
+    X_qso_test = X_test[quasar_indices_test]
+    redshift_qso_train = y_train[quasar_indices_train, 1]
+    redshift_qso_test = y_test[quasar_indices_test, 1]
 
     print "n_quasars:", len(X_qso_train) + len(X_qso_test)
 
     # Estimate redshift for quasars
-    regress(X_qso_train, X_qso_test, redshift_qso_train, redshift_qso_test, save_plots)
+    regress_per_region([2, 4], X_qso_train, X_qso_test, redshift_qso_train,
+                                            redshift_qso_test, save_plots)
 
 
 if __name__ == '__main__':
