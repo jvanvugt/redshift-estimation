@@ -13,7 +13,7 @@ from sklearn.metrics import mean_squared_error, confusion_matrix, \
     accuracy_score
 from sklearn.cross_validation import train_test_split
 
-from fetch_sdss_data import get_data_from_csv
+from fetch_sdss_data import get_data_from_csv, load_vizier_data
 from qso_classifier import QsoClassifier
 from redshift_regression import RedshiftRegressor
 
@@ -73,11 +73,38 @@ def get_data():
     X, y = remove_missing(X, y)
     return X, y
 
+def get_vizier_data():
+    data = load_vizier_data('asu.tsv')
+
+    N = len(data)
+
+    X = np.empty((N, 9))
+    y = np.empty((N, 1))
+
+    X[:, 0] = data['umag']
+    X[:, 1] = data['gmag']
+    X[:, 2] = data['rmag']
+    X[:, 3] = data['imag']
+    X[:, 4] = data['zmag']
+    X[:, 5] = data['Ymag']
+    X[:, 6] = data['Jmag']
+    X[:, 7] = data['Hmag']
+    X[:, 8] = data['Kmag']
+    y[:, 0] = data['zsp']
+
+    X, y = remove_missing(X, y)
+    return X, y
+
+
+
 def remove_missing(features, labels):
     """
     Remove all rows from the data that have missing data.
     """
-    not_missing = ~np.isnan(features).any(axis=1)
+    not_missing_X = ~np.isnan(features).any(axis=1)
+    not_missing_y = ~np.isnan(labels).any(axis=1)
+
+    not_missing = np.logical_and(not_missing_X, not_missing_y)
     return features[not_missing, :], labels[not_missing, :]
 
 def classification_info(predictions, labels, save_plots):
@@ -121,6 +148,7 @@ def regressor_info(predictions, actual, save_plots):
 
     axis_lim = np.array([minimum, maximum])
 
+    print predictions.shape, actual.shape
     plt.figure()
     ax = plt.axes()
     plt.hexbin(actual, predictions, mincnt=1, gridsize=300)
@@ -232,8 +260,6 @@ def run(save_plots=True):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33,
                                                              random_state=42)
-    class_train = y_train[:, 0].astype(np.int)
-    class_test = y_test[:, 0].astype(np.int)
 
     # Predict the class of all objects
     # classify(X_train, X_test, class_train, class_test, save_plots)
@@ -253,6 +279,14 @@ def run(save_plots=True):
     # Estimate redshift for quasars
     regress_per_region([2, 4], X_qso_train, X_qso_test, redshift_qso_train,
                                             redshift_qso_test, save_plots)
+def estimate_vizier_redshift():
+    X, y = get_vizier_data()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5,
+                                                            random_state=42)
+    y_train.reshape((-1,))
+    y_test.shape = (-1,)
+
+    regress(X_train, X_test, y_train, y_test, True)
 
 
 if __name__ == '__main__':

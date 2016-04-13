@@ -8,7 +8,7 @@ import os
 from sklearn.externals import joblib
 import numpy as np
 
-DATA_FOLDER = '/scratch/jvvugt'
+DATA_FOLDER = '../data'
 
 NAMES = [
     'specObjID', 'targetObjID', 'z', 'zErr',
@@ -53,6 +53,11 @@ DTYPES = (
 
     np.int
 )
+
+VIZIER_NAMES = [
+    'umag', 'gmag', 'rmag', 'imag',
+    'zmag', 'Ymag', 'Jmag', 'Hmag', 'Kmag', 'zsp'
+]
 
 LABELS = ["GALAXY", "QSO", "STAR"]
 
@@ -129,7 +134,16 @@ def get_data_from_csv(file_name, refresh=False):
 
     return pickle_csv_data(csv_path, pickled_path)
 
+def load_vizier_data(filename):
+    tsv_path = os.path.join(DATA_FOLDER, filename)
+    pickled_path = tsv_path + '.p'
+    if os.path.isfile(pickled_path):
+        return joblib.load(pickled_path)
 
+    with open(tsv_path, 'r') as file:
+        data = np.genfromtxt(file, delimiter=';', names=VIZIER_NAMES, skip_header=54)
+        joblib.dump(data, pickled_path)
+        return data
 
 if __name__ == '__main__':
     data = fetch_data(refresh=True)
