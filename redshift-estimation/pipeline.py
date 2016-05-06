@@ -8,14 +8,12 @@ from math import sqrt, floor, ceil
 
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error, confusion_matrix, \
     accuracy_score
 from sklearn.cross_validation import train_test_split
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 
 from fetch_sdss_data import get_data_from_csv, load_vizier_data
-from qso_classifier import QsoClassifier
-from redshift_regression import RedshiftRegressor
 
 def get_data():
     """
@@ -96,45 +94,6 @@ def get_vizier_data():
     return X, y
 
 
-
-def remove_missing(features, labels):
-    """
-    Remove all rows from the data that have missing data.
-    """
-    not_missing_X = ~np.isnan(features).any(axis=1)
-    not_missing_y = ~np.isnan(labels).any(axis=1)
-
-    not_missing = np.logical_and(not_missing_X, not_missing_y)
-    return features[not_missing, :], labels[not_missing, :]
-
-def classification_info(predictions, labels, save_plots):
-    """
-    Print some info about the performance of the classifier.
-    """
-    print '\nClassifier:'
-
-    plt.figure()
-    cm = confusion_matrix(labels, predictions)
-    normalized_cm = np.log10(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis])
-
-    names = ['Star', 'Quasar', 'Galaxy']
-    plt.imshow(normalized_cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title('Classification: normalized confusion matrix (logscale)')
-    plt.colorbar()
-    tick_marks = np.arange(len(names))
-    plt.xticks(tick_marks, names, rotation=45)
-    plt.yticks(tick_marks, names)
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-
-    if save_plots:
-        plt.show()
-    else:
-        plt.savefig('../plots/classification.png')
-
-    print 'accuracy:', accuracy_score(labels, predictions)
-
 def regressor_info(predictions, actual, save_plots):
     """
     Print info about the performance of the regression model.
@@ -148,7 +107,6 @@ def regressor_info(predictions, actual, save_plots):
 
     axis_lim = np.array([minimum, maximum])
 
-    print predictions.shape, actual.shape
     plt.figure()
     ax = plt.axes()
     plt.hexbin(actual, predictions, mincnt=1, gridsize=300)
@@ -167,9 +125,9 @@ def regressor_info(predictions, actual, save_plots):
     plt.xlabel(r'$\mathrm{z_{spec}}$', fontsize=14)
     plt.ylabel(r'$\mathrm{z_{phot}}$', fontsize=14)
     if save_plots:
-        plt.show()
-    else:
         plt.savefig('../plots/regressor.png')
+    else:
+        plt.show()
 
 def find_redshift_indices(redshifts, value, unequality=np.greater_equal):
     """
@@ -193,27 +151,12 @@ def find_quasar_indices(classes):
     idx.shape = classes.shape
     return idx
 
-def classify(X_train, X_test, y_train, y_test, save_plots):
-    """
-    Train and test a random forest classifier
-
-    Return the predictions for the test set
-    """
-    clf = QsoClassifier()
-    print 'Training classifier...'
-    clf.fit(X_train, y_train)
-    print 'Testing classifier...'
-    predictions_clf = clf.predict(X_test)
-    classification_info(predictions_clf, y_test, save_plots)
-    print
-    return predictions_clf
-
-def regress(X_train, X_test, y_train, y_test, save_plots):
+def regress(X_train, X_test, y_train, y_test, save_plots=False):
     """
     Train and test a random forest regressor
     Return the predictions for the test set
     """
-    regressor = RedshiftRegressor()
+    regressor = RandomForestRegressor(n_estimators=100, n_jobs=1)
     print 'Training regressor...'
     regressor.fit(X_train, y_train)
     print 'Testing regressor...'
@@ -248,7 +191,7 @@ def regress_per_region(regions, X_train, X_test, y_train, y_test, save_plots):
 
 
 
-def run(save_plots=True):
+def run(save_plots=False):
     """
     Train a classifier to find quasars and a regressor for estimating their
     redshifts
@@ -260,9 +203,6 @@ def run(save_plots=True):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33,
                                                              random_state=42)
-
-    # Predict the class of all objects
-    # classify(X_train, X_test, class_train, class_test, save_plots)
 
     # Find the quasars in the data
     quasar_indices_train = find_quasar_indices(y_train[:, 0])
@@ -291,6 +231,6 @@ def estimate_vizier_redshift():
 
 if __name__ == '__main__':
     if '--save-plots' in sys.argv:
-        run(save_plots=False)
+        run(save_plots=True)
     else:
         run()

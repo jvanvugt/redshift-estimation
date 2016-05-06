@@ -55,8 +55,8 @@ DTYPES = (
 )
 
 VIZIER_NAMES = [
-    'umag', 'gmag', 'rmag', 'imag',
-    'zmag', 'Ymag', 'Jmag', 'Hmag', 'Kmag', 'zsp'
+    'zsp', 'umag', 'gmag', 'rmag', 'imag', 'zmag', '3.6mag', '4.5mag', 'Ymag',
+    'Jmag', 'Hmag', 'Kmag'
 ]
 
 LABELS = ["GALAXY", "QSO", "STAR"]
