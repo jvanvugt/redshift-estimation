@@ -84,6 +84,7 @@ def classification_info(predictions, labels, save_plots):
         plt.show()
 
     print 'accuracy:', accuracy_score(labels, predictions)
+    print names
     print 'recall:', recall_score(labels, predictions, average=None)
     print 'precision:', precision_score(labels, predictions, average=None)
 
