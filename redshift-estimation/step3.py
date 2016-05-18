@@ -2,6 +2,7 @@ import sys
 from math import sqrt, floor, ceil
 
 import numpy as np
+from sklearn.preprocessing import Imputer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -97,7 +98,12 @@ def run(save_plots=False):
     X_sdss, X_ukidss, y = get_data()
 
     # Combine the datasets, so we can split the training and test sets
+    imputer = Imputer(strategy='median', axis=1)
     X = np.hstack((X_sdss, X_ukidss))
+    print 'Initial dataset size: ', len(X)
+    print 'N rows without missing values: ', sum(~np.isnan(X).any(axis=1))
+    X = imputer.fit_transform(X)
+    print 'N rows without missing values after: ', sum(~np.isnan(X).any(axis=1))
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 
     # Split the two features so we can train seperate models on them
@@ -107,6 +113,9 @@ def run(save_plots=False):
     # Remove training data with missing values
     X_train_sdss, y_train_sdss = remove_missing(X_train_sdss, y_train)
     X_train_ukidss, y_train_ukidss = remove_missing(X_train_ukidss, y_train)
+
+    print 'N_train_sdss: ', len(X_train_sdss)
+    print 'N_train_ukidss: ', len(X_train_ukidss)
 
     # Train a model for both features
     print 'Training models...'
@@ -122,14 +131,14 @@ def run(save_plots=False):
 
     # Train the models
     print 'Calculating predictions...'
-    pred_sdss = np.full(len(X_test), float('NaN'), dtype=np.float32)
+    pred_sdss = np.full(len(X_test), np.nan, dtype=np.float32)
     pred_sdss[X_test_sdss_idx] = sdss_reg.predict(X_test[X_test_sdss_idx, :5])
     print 'test set sdss size: ', sum(X_test_sdss_idx)
-    pred_ukidss = np.full(len(X_test), float('NaN'), dtype=np.float32)
+    pred_ukidss = np.full(len(X_test), np.nan, dtype=np.float32)
     print 'test set ukidss size: ', sum(X_test_ukidss_idx)
     pred_ukidss[X_test_ukidss_idx] = ukidss_reg.predict(X_test[X_test_ukidss_idx, 5:])
 
-    predictions = np.full(len(X_test), float('NaN'), dtype=np.float32)
+    predictions = np.full(len(X_test), np.nan, dtype=np.float32)
     for i, (sdss, ukidss) in enumerate(zip(pred_sdss, pred_ukidss)):
         if not np.isnan(sdss) and not np.isnan(ukidss):
             predictions[i] = (sdss + ukidss) / 2.
