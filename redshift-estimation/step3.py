@@ -1,3 +1,7 @@
+"""
+Redshift estimation for quasars
+"""
+
 import sys
 from math import sqrt, floor, ceil
 
@@ -7,26 +11,23 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
+from tqdm import *
 
 from datasets import load_vizier_data
 from util import remove_missing
 
-"""
-1. Load data
-2. Remove entries that are missing y or all of X
-3. Train regressors on X_1 and X_2
-"""
-
 def get_data():
     data = load_vizier_data('sdss_wise.tsv')
-    X_sdss = np.empty((len(data), 5))
+    X_sdss_wise = np.empty((len(data), 7))
     X_ukidss = np.empty((len(data), 4))
 
-    X_sdss[:, 0] = data['umag']
-    X_sdss[:, 1] = data['gmag']
-    X_sdss[:, 2] = data['rmag']
-    X_sdss[:, 3] = data['imag']
-    X_sdss[:, 4] = data['zmag']
+    X_sdss_wise[:, 0] = data['umag']
+    X_sdss_wise[:, 1] = data['gmag']
+    X_sdss_wise[:, 2] = data['rmag']
+    X_sdss_wise[:, 3] = data['imag']
+    X_sdss_wise[:, 4] = data['zmag']
+    X_sdss_wise[:, 5] = data['36mag']
+    X_sdss_wise[:, 6] = data['45mag']
 
     X_ukidss[:, 0] = data['Ymag']
     X_ukidss[:, 1] = data['Jmag']
@@ -35,7 +36,7 @@ def get_data():
 
     y = data['zsp']
 
-    return X_sdss, X_ukidss, y
+    return X_sdss_wise, X_ukidss, y
 
 def plot_importances(forest, N_features):
     importances = forest.feature_importances_
@@ -92,14 +93,41 @@ def regressor_info(predictions, actual, save_plots):
         plt.savefig('../plots/regressor.png')
     else:
         plt.show()
+        
+def complete_data(save_plots=False):
+    X_sdss_wise, X_ukidss, y = get_data()
+    X = np.hstack((X_sdss_wise, X_ukidss))
+
+    high_z_idx = y >= 4
+    X = X[high_z_idx, :]
+    y = y[high_z_idx]
+    print X.shape
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75)
+    
+    clf_sdss_wise = RandomForestRegressor(n_estimators=100, n_jobs=-1)
+    clf_all = RandomForestRegressor(n_estimators=100, n_jobs=-1)
+    
+    clf_sdss_wise.fit(X_train[:, :7], y_train)
+    
+    X_train_all, y_train_all = remove_missing(X_train, y_train)
+    
+    clf_all.fit(X_train_all, y_train_all)
+    
+    non_missing_idx = ~np.isnan(X_test).any(axis=1)
+    predictions = clf_sdss_wise.predict(X_test[:, :7])
+    predictions[non_missing_idx] = clf_all.predict(X_test[non_missing_idx, :])
+    
+    regressor_info(predictions, y_test, save_plots)
+    
+    
 
 
 def run(save_plots=False):
-    X_sdss, X_ukidss, y = get_data()
+    X_sdss_wise, X_ukidss, y = get_data()
 
     # Combine the datasets, so we can split the training and test sets
     imputer = Imputer(strategy='median', axis=1)
-    X = np.hstack((X_sdss, X_ukidss))
+    X = np.hstack((X_sdss_wise, X_ukidss))
     print 'Initial dataset size: ', len(X)
     print 'N rows without missing values: ', sum(~np.isnan(X).any(axis=1))
     X = imputer.fit_transform(X)
@@ -161,4 +189,4 @@ def run(save_plots=False):
 
 
 if __name__ == '__main__':
-    run('--save-plots' in sys.argv)
+    complete_data('--save-plots' in sys.argv)
